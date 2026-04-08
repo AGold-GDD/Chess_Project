@@ -1,7 +1,7 @@
 package Lecture.Project_1;
 
 public class GameManager {
-
+    //variables
     private ChessBoard board;
     private UserInput input;
     //constructor with instances for ChessBoard and UserInput
