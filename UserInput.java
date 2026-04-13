@@ -1,14 +1,18 @@
 package Lecture.Project_1;
 
 import java.util.Scanner;
-
+//User Input using scanner to determine moves
 public class UserInput {
     private Scanner scanner;
 //New constructor and scanner
     public UserInput() {
         scanner = new Scanner(System.in);
     }
-    //get player input to move rook chess piece
+
+public String getCommand() {
+    return scanner.nextLine().trim().toUpperCase();
+}
+    //get player input to move pieces
     public int[] getPlayerPosition() {
         while (true) {
             System.out.println("ChessBoard.java");
@@ -24,11 +28,11 @@ public class UserInput {
             int targetCol = input.charAt(0) - 'A';
             return new int[]{targetRow, targetCol};
             } else {
-                System.out.println("Invalid coordinate. Try again.");
+                System.out.println("Invalid move. Try again.");
             }
         }
     }
-    //boolean to determine proper format
+    //boolean to determine correct format
     private static boolean isValidFormat(String s) {
         if (s.length() != 2)
             return false;
