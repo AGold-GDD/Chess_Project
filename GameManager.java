@@ -91,6 +91,8 @@ public class GameManager {
 // Run Game
     public static void main(String[] args) {
         GameManager game = new GameManager();
-        game.runGame();
+        //game.runGame();
+
+        javax.swing.SwingUtilities.invokeLater(() -> new ChessGUI().setVisible(true));
     }
 }

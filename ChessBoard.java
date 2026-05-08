@@ -29,22 +29,22 @@ public class ChessBoard {
     private void initializeFullChessBoard() {
         initializeEmptyBoard();
         
-        // BLACK PIECES - Row 0 (top of board)
+        // BLACK PIECES
         board[0][0] = 'r'; board[0][1] = 'n'; board[0][2] = 'b';
         board[0][3] = 'q'; board[0][4] = 'k'; board[0][5] = 'b';
         board[0][6] = 'n'; board[0][7] = 'r';
         
-        // BLACK PAWNS - Row 1
+        // BLACK PAWNS
         for (int i = 0; i < 8; i++) {
             board[1][i] = 'p';
         }
         
-        // WHITE PAWNS - Row 6  
+        // WHITE PAWNS 
         for (int i = 0; i < 8; i++) {
             board[6][i] = 'P';
         }
         
-        // WHITE PIECES - Row 7 (bottom of board)
+        // WHITE PIECES
         board[7][0] = 'R'; board[7][1] = 'N'; board[7][2] = 'B';
         board[7][3] = 'Q'; board[7][4] = 'K'; board[7][5] = 'B';
         board[7][6] = 'N'; board[7][7] = 'R';
@@ -61,10 +61,11 @@ public class ChessBoard {
 
    
     public void showBoard() {
-    System.out.println("\n--- CHESS BOARD - All Pieces Labeled ---");
-    System.out.println("  *A B C D E F G H* ");
+    System.out.println("\n--- CHESS BOARD ---");
+    System.out.println("  * A B C D E F G H * ");
+    System.out.println("----------------------");
     for (int i = 0; i < 8; i++) {
-        System.out.print((8 - i) + " ");
+        System.out.print((8 - i) + "| ");
         for (int j = 0; j < 8; j++) {
             char square = board[i][j];
             if (square == ' ') {
@@ -72,11 +73,12 @@ public class ChessBoard {
             }
             System.out.print(" " + square);
         }
-        System.out.println(" " + (8 - i));
+        System.out.println(" |" + (8 - i));
     }
-    System.out.println("   A B C D E F G H ");
+    System.out.println("----------------------");
+    System.out.println("  * A B C D E F G H * ");
     
-    // LEGEND - Shows ALL pieces
+    // LEGEND
     System.out.println("\n PIECE LEGEND:");
     System.out.println(" K=King  Q=Queen  R=Rook  B=Bishop N=Knight  P=Pawn");
     System.out.println(" k= AltKing  q=AltQueen  r=AltRook  b=AltBishop  n=AltKnight  p=AltPawn");
