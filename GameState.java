@@ -24,7 +24,7 @@ public class GameState implements Serializable {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
             oos.writeObject(state);
         }
-        System.out.println("✓ Game saved: " + filename);
+        System.out.println(" Game saved: " + filename);
     }
 //Load Game
     public static void loadGame(ChessBoard chessBoard, String filename) throws IOException, ClassNotFoundException {
