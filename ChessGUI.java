@@ -6,26 +6,25 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
+    //JFrame board
 public class ChessGUI extends JFrame {
     private ChessBoard board;
-    private JPanel boardPanel;
-    private JButton[][] squares;
+    JPanel boardPanel;
+    private DraggableChessPiece[][] chessPieces;
     private JPanel capturedPanel;
     private JLabel statusLabel;
     private JLabel turnLabel;
     private JButton saveButton, loadButton, replayButton;
     
-    private int selectedRow = -1, selectedCol = -1;
-    private List<Character> whiteCaptured = new ArrayList<>();
-    private List<Character> blackCaptured = new ArrayList<>();
-    
-    private static final Color LIGHT_SQUARE = new Color(240, 217, 181);
-    private static final Color DARK_SQUARE = new Color(181, 136, 99);
-    private static final Color SELECTED_COLOR = new Color(0, 255, 0, 100);
-    private static final Color ILLEGAL_COLOR = new Color(255, 0, 0, 100);
-    private static final Color LEGAL_COLOR = new Color(0, 255, 0, 50);
-
+    public List<Character> whiteCaptured = new ArrayList<>();
+    public List<Character> blackCaptured = new ArrayList<>();
+        //board square colors
+    private static final Color WHITE_SQUARE = Color.WHITE;
+    private static final Color BLACK_SQUARE = Color.BLACK;
+    private static final Color SELECTED_COLOR = new Color(0, 255, 0, 120);
+    private static final Color LEGAL_COLOR = new Color(0, 255, 0, 80);
+    private static final int TILE_SIZE = 80;
+        //new GUI for board
     public ChessGUI() {
         board = new ChessBoard();
         initializeGUI();
@@ -34,94 +33,101 @@ public class ChessGUI extends JFrame {
     }
 
     private void initializeGUI() {
-        setTitle("Chess Game - GUI Edition");
+        setTitle("Chess Game - Drag & Drop Edition");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         setSize(1000, 800);
 
-        // Main panel with board and sidebar
+        // Window (JPanel) with board and sidebar
         JPanel mainPanel = new JPanel(new BorderLayout());
         
-        // Chess Board
+       
         boardPanel = createBoardPanel();
         mainPanel.add(boardPanel, BorderLayout.CENTER);
         
-        // Right sidebar
+        // right sidebar
         JPanel sidebar = createSidebar();
         mainPanel.add(sidebar, BorderLayout.EAST);
         
         add(mainPanel, BorderLayout.CENTER);
-        
-        // Menu bar
         createMenuBar();
     }
-    //new JPanel
-    private JPanel createBoardPanel() {
-        JPanel panel = new JPanel(new GridLayout(8, 8, 1, 1));
-        panel.setPreferredSize(new Dimension(640, 640));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        squares = new JButton[8][8];
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                JButton square = createSquare(row, col);
-                squares[row][col] = square;
-                panel.add(square);
+
+private JPanel createBoardPanel() {
+   
+    boardPanel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            paintChessBoard(g);
+        }
+    };
+    
+    boardPanel.setPreferredSize(new Dimension(640, 640));
+    boardPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    boardPanel.setLayout(null);  
+    
+    // Create draggable pieces
+    createDraggablePieces();
+    
+    return boardPanel;
+}
+
+private void paintChessBoard(Graphics g) {
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    
+    int tileSize = 80;
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            // Black & white checkerboard
+            g2d.setColor((row + col) % 2 == 0 ? WHITE_SQUARE : BLACK_SQUARE);
+            g2d.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+            
+            // Grid lines for checkerboard
+            g2d.setColor(Color.GRAY.darker());
+            g2d.setStroke(new BasicStroke(1));
+            g2d.drawRect(col * tileSize, row * tileSize, tileSize, tileSize);
+        }
+    }
+    
+   
+    g2d.setColor(Color.GRAY);
+    g2d.setFont(new Font("Arial", Font.BOLD, 12));
+    for (int i = 0; i < 8; i++) {
+        g2d.drawString(String.valueOf(8 - i), 4, (i * tileSize) + 68);
+        g2d.drawString(String.valueOf((char)('A' + i)), (i * tileSize) + 56, 660);
+    }
+}
+
+private void createDraggablePieces() {
+    chessPieces = new DraggableChessPiece[8][8];
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            if (board.board[row][col] != ' ') {
+                chessPieces[row][col] = new DraggableChessPiece(board, this, row, col);
+                boardPanel.add(chessPieces[row][col]);
             }
         }
-        return panel;
     }
-    //create square and Jbutton
-    private JButton createSquare(int row, int col) {
-        JButton square = new JButton();
-        square.setFocusable(false);
-        square.setFont(new Font("Serif", Font.BOLD, 32));
-        square.setContentAreaFilled(false);
-        square.setBorderPainted(false);
-        
-        // Set initial square color
-        boolean isLight = (row + col) % 2 == 0;
-        square.setBackground(isLight ? LIGHT_SQUARE : DARK_SQUARE);
-        
-        square.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                handleSquareClick(row, col);
-            }
-            
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (selectedRow >= 0 && selectedCol >= 0) {
-                    highlightLegalMoves();
-                }
-            }
-            
-            @Override
-            public void mouseExited(MouseEvent e) {
-                clearHighlights();
-                repaintBoard();
-            }
-        });
-        
-        return square;
-    }
-
+    boardPanel.revalidate();
+    boardPanel.repaint();
+}
+        //sidebar with buttons
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(300, 640));
         sidebar.setBorder(BorderFactory.createTitledBorder("Game Info"));
         
-        // Status labels
         statusLabel = new JLabel("Status: Active", JLabel.CENTER);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         turnLabel = new JLabel("Turn: White", JLabel.CENTER);
         turnLabel.setFont(new Font("Arial", Font.BOLD, 14));
         
-        // Save, Load, and Replay Buttons
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 5, 5));
-        saveButton = new JButton("Save Game");
-        loadButton = new JButton("Load Game");
-        replayButton = new JButton("Replay Game");
+        saveButton = new JButton(" Save Game");
+        loadButton = new JButton(" Load Game");
+        replayButton = new JButton(" Replay");
         
         saveButton.addActionListener(e -> saveGame());
         loadButton.addActionListener(e -> loadGame());
@@ -131,18 +137,17 @@ public class ChessGUI extends JFrame {
         buttonPanel.add(loadButton);
         buttonPanel.add(replayButton);
         
-        // captured pieces shown on side
         capturedPanel = new JPanel(new BorderLayout());
         updateCapturedPieces();
         
         sidebar.add(statusLabel, BorderLayout.NORTH);
-        sidebar.add(turnLabel, BorderLayout.CENTER);
-        sidebar.add(buttonPanel, BorderLayout.SOUTH);
+        sidebar.add(turnLabel, BorderLayout.SOUTH);
+        sidebar.add(buttonPanel, BorderLayout.CENTER);
         sidebar.add(capturedPanel, BorderLayout.WEST);
         
         return sidebar;
     }
-    //menu bar
+        //menu bar
     private void createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
@@ -156,139 +161,32 @@ public class ChessGUI extends JFrame {
         fileMenu.addSeparator();
         fileMenu.add(exitItem);
         menuBar.add(fileMenu);
-        
         setJMenuBar(menuBar);
     }
-
-    private void handleSquareClick(int row, int col) {
-        if (selectedRow == -1) {
-            // select piece to move
-            if (board.board[row][col] != ' ') {
-                PieceColor currentTurn = board.getCurrentTurn();
-                boolean isWhiteTurn = currentTurn == PieceColor.WHITE;
-                boolean isCorrectColor = (Character.isUpperCase(board.board[row][col]) == isWhiteTurn);
-                
-                if (isCorrectColor) {
-                    selectedRow = row;
-                    selectedCol = col;
-                    repaintBoard();
-                }
-            }
-        } else {
-            // try to move piece
-            if (board.isValidMove(selectedRow, selectedCol, row, col)) {
-                // Valid move - execute it
-                char capturedPiece = board.board[row][col];
-                if (capturedPiece != ' ') {
-                    if (Character.isUpperCase(capturedPiece)) {
-                        whiteCaptured.add(capturedPiece);
-                    } else {
-                        blackCaptured.add(capturedPiece);
-                    }
-                }
-                
-                board.playerMove(selectedRow, selectedCol, row, col);
-                clearHighlights();
-                selectedRow = -1;
-                selectedCol = -1;
-                repaintBoard();
-                updateStatus();
-                updateCapturedPieces();
-                
-                if (board.gameStatus != ChessBoard.GameStatus.ACTIVE) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Game Over! " + board.gameStatus + "!", 
-                        "Game Ended", JOptionPane.INFORMATION_MESSAGE);
-                }
-            } else {
-                // move is illegal, try a new move
-                if (board.board[row][col] != ' ' && 
-                    Character.isUpperCase(board.board[row][col]) == 
-                    (board.getCurrentTurn() == PieceColor.WHITE)) {
-                    selectedRow = row;
-                    selectedCol = col;
-                } else {
-                    selectedRow = -1;
-                    selectedCol = -1;
-                }
-                repaintBoard();
-            }
-        }
-    }
-
-    private void repaintBoard() {
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                JButton square = squares[row][col];
-                char piece = board.board[row][col];
-                
-                // base square color
-                boolean isLight = (row + col) % 2 == 0;
-                Color baseColor = isLight ? LIGHT_SQUARE : DARK_SQUARE;
-                
-                // Piece display
-                if (piece == ' ') {
-                    square.setText("");
-                } else {
-                    square.setText(String.valueOf(piece));
-                }
-                
-                // Highlights
-                if (row == selectedRow && col == selectedCol) {
-                    square.setBackground(SELECTED_COLOR);
-                } else {
-                    square.setBackground(baseColor);
-                }
-                
-                square.repaint();
-            }
-        }
-    }
-
-    private void highlightLegalMoves() {
-        clearHighlights();
-        repaintBoard();
-        
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                if (board.isValidMove(selectedRow, selectedCol, row, col)) {
-                    squares[row][col].setBackground(LEGAL_COLOR);
-                }
-            }
-        }
-    }
-
-    private void clearHighlights() {
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                JButton square = squares[row][col];
-                boolean isLight = (row + col) % 2 == 0;
-                square.setBackground(isLight ? LIGHT_SQUARE : DARK_SQUARE);
-            }
-        }
-    }
-
-    private void updateCapturedPieces() {
+        //captured pieces
+    public void updateCapturedPieces() {
         capturedPanel.removeAll();
         
-        JPanel whitePanel = new JPanel();
-        whitePanel.setBorder(BorderFactory.createTitledBorder("White Captured"));
+        JPanel whitePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        whitePanel.setBorder(BorderFactory.createTitledBorder("White Captured (" + whiteCaptured.size() + ")"));
         whitePanel.setBackground(Color.WHITE);
         
-        JPanel blackPanel = new JPanel();
-        blackPanel.setBorder(BorderFactory.createTitledBorder("Black Captured"));
+        JPanel blackPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        blackPanel.setBorder(BorderFactory.createTitledBorder("Black Captured (" + blackCaptured.size() + ")"));
         blackPanel.setBackground(Color.BLACK);
         blackPanel.setForeground(Color.WHITE);
         
         for (char piece : whiteCaptured) {
             JLabel label = new JLabel(String.valueOf(piece), JLabel.CENTER);
-            label.setFont(new Font("Serif", Font.BOLD, 20));
+            label.setFont(new Font("Serif", Font.BOLD, 24));
+            label.setPreferredSize(new Dimension(30, 30));
             whitePanel.add(label);
         }
         
         for (char piece : blackCaptured) {
             JLabel label = new JLabel(String.valueOf(piece), JLabel.CENTER);
-            label.setFont(new Font("Serif", Font.BOLD, 20));
+            label.setFont(new Font("Serif", Font.BOLD, 24));
+            label.setPreferredSize(new Dimension(30, 30));
             blackPanel.add(label);
         }
         
@@ -297,59 +195,55 @@ public class ChessGUI extends JFrame {
         capturedPanel.revalidate();
         capturedPanel.repaint();
     }
-
-    private void updateStatus() {
+        //updated status
+    public void updateStatus() {
         statusLabel.setText("Status: " + board.gameStatus);
-        turnLabel.setText("Turn: " + board.getCurrentTurn());
-    }
-        //save game
-    private void saveGame() {
-        String filename = JOptionPane.showInputDialog(this, "Enter save filename:", "chessgame.dat");
-        if (filename != null && !filename.trim().isEmpty()) {
-            try {
-                board.saveGame(filename.trim());
-                JOptionPane.showMessageDialog(this, "Game saved successfully!");
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Save failed: " + e.getMessage());
-            }
+        turnLabel.setText("Turn: " + board.getCurrentTurn() + " | Moves: " + board.moveHistory.size());
+        
+        if (board.gameStatus != ChessBoard.GameStatus.ACTIVE) {
+            JOptionPane.showMessageDialog(this, 
+                "Game Over! " + board.gameStatus + "!", 
+                "Checkmate!", JOptionPane.INFORMATION_MESSAGE);
         }
     }
-        //load game
+    //board repaint
+public void repaintBoard() {
+    boardPanel.repaint();
+}
+    //get boaard panels
+public JPanel getBoardPanel() {
+    return boardPanel;
+}
+        //save game option
+    private void saveGame() {
+        String filename = JOptionPane.showInputDialog(this, "Save as:", "chessgame.dat");
+        if (filename != null && !filename.trim().isEmpty()) {
+            board.saveGame(filename.trim());
+            JOptionPane.showMessageDialog(this, " Game saved!");
+        }
+    }
+        //load game option
     private void loadGame() {
         JFileChooser chooser = new JFileChooser();
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 board.loadGame(chooser.getSelectedFile().getName());
-                whiteCaptured.clear();
-                blackCaptured.clear();
-                updateCapturedPieces();
-                repaintBoard();
-                updateStatus();
-                JOptionPane.showMessageDialog(this, "Game loaded successfully!");
+                resetBoard();
+                JOptionPane.showMessageDialog(this, " Game loaded!");
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Load failed: " + e.getMessage());
+                JOptionPane.showMessageDialog(this, " Load failed: " + e.getMessage());
             }
         }
     }
-        //replay game
+        //replay game option
     private void replayGame() {
-        SwingUtilities.invokeLater(() -> {
-            JFrame replayFrame = new JFrame("Game Replay");
-            replayFrame.setSize(800, 600);
-            
-            JTextArea replayText = new JTextArea();
-            replayText.setEditable(false);
-            replayText.setFont(new Font("Monospaced", Font.PLAIN, 14));
-            
-            for (int i = 0; i < board.moveHistory.size(); i++) {
-                replayText.append("Move " + (i + 1) + ": " + board.moveHistory.get(i) + "\n");
-            }
-            
-            replayFrame.add(new JScrollPane(replayText));
-            replayFrame.setVisible(true);
-        });
+        StringBuilder replay = new StringBuilder("Move History:\n\n");
+        for (int i = 0; i < board.moveHistory.size(); i++) {
+            replay.append((i + 1)).append(": ").append(board.moveHistory.get(i)).append("\n");
+        }
+        JOptionPane.showMessageDialog(this, replay.toString(), "Replay", JOptionPane.PLAIN_MESSAGE);
     }
-        //new game
+        //start new game option
     private void newGame() {
         int confirm = JOptionPane.showConfirmDialog(this, "Start new game?", "New Game", 
             JOptionPane.YES_NO_OPTION);
@@ -357,14 +251,19 @@ public class ChessGUI extends JFrame {
             board = new ChessBoard();
             whiteCaptured.clear();
             blackCaptured.clear();
-            selectedRow = -1;
-            selectedCol = -1;
-            repaintBoard();
-            updateCapturedPieces();
+            resetBoard();
             updateStatus();
+            updateCapturedPieces();
         }
     }
-        //main method to start the game (with UI)
+    //reset board
+private void resetBoard() {
+    boardPanel.removeAll();
+    createDraggablePieces();  
+    boardPanel.revalidate();
+    boardPanel.repaint();
+}
+    //main start game method
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
@@ -372,9 +271,7 @@ public class ChessGUI extends JFrame {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            
-            ChessGUI gui = new ChessGUI();
-            gui.setVisible(true);
+            new ChessGUI().setVisible(true);
         });
     }
 }
